@@ -7,7 +7,7 @@ pkgdesc="wallpaper generator for instantOS"
 url="https://github.com/instantOS/instantwallpaper"
 arch=('any')
 license=('GPL2')
-depends=('sh' 'feh' 'imagemagick' 'paperbash')
+depends=('sh' 'feh' 'imagemagick')
 makedepends=('git' 'wget')
 provides=(instantwallpaper)
 conflicts=(instantwallpaper)
@@ -24,7 +24,6 @@ package() {
     RAW="https://raw.githubusercontent.com/instantOS/instantLOGO/main"
     MEDIARAW="https://raw.githubusercontent.com/instantOS/instantLOGO/main"
     cd $_pkgname
-    mkdir -p ${pkgdir}/usr/bin
     mkdir -p ${pkgdir}/usr/share/backgrounds
     mkdir -p ${pkgdir}/usr/share/instantwallpaper
 
@@ -36,7 +35,5 @@ package() {
     wget -qO ${pkgdir}/usr/share/instantwallpaper/defaultphoto.png "$MEDIARAW/wallpaper/defaultphoto.png"
     chmod +x *.sh
 
-    mv wallutils.sh ${pkgdir}/usr/share/instantwallpaper
-    mv wall.sh ${pkgdir}/usr/bin/instantwallpaper
     install -m644 -D LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
 }
