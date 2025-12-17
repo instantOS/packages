@@ -1,7 +1,7 @@
 # Maintainer: paperbenni <paperbenni@gmail.com>
 _pkgname=paperbash
 pkgname=$_pkgname
-pkgver=202309161910
+pkgver=202512171939
 pkgrel=1
 pkgdesc="it's like pip but bash and a little shitty"
 url="https://github.com/paperbenni/bash"
@@ -15,8 +15,6 @@ source=("$_pkgname::git+https://github.com/paperbenni/bash.git")
 
 sha256sums=('SKIP')
 
-set -e
-
 pkgver() {
     cd $_pkgname
     date '+%Y%m%d%H%M'
@@ -24,8 +22,17 @@ pkgver() {
 
 package() {
     cd $_pkgname
-    mkdir -p "${pkgdir}"/usr/share/paperbash
-    chmod +x ./*.sh
+
+    # Install license
     install -m644 -D LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
-    mv ./* "${pkgdir}"/usr/share/paperbash/
+
+    # Install all paperbash files
+    mkdir -p "${pkgdir}"/usr/share/paperbash
+    cp -r * "${pkgdir}"/usr/share/paperbash/
+
+    # Make shell scripts executable
+    find "${pkgdir}"/usr/share/paperbash -name "*.sh" -exec chmod +x {} \;
+
+    # Remove the LICENSE file from share directory since it's already in licenses
+    rm -f "${pkgdir}"/usr/share/paperbash/LICENSE
 }
