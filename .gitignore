@@ -65,3 +65,5 @@ packages/instantpass/instantpass/*
 packages/instantos-keyring/instantos-keyring/*
 packages/ttf-nerd-fonts-fira-code/ttf-nerd-fonts-fira-code/*
 packages/tzupdate/3.1.0.tar.gz
+packages/paperbash/pkg/paperbash/usr/share
+packages/paperbash/pkg/paperbash
