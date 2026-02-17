@@ -17,6 +17,7 @@ depends=(
     'bison'
     'blueman'
     'bottom'
+    'i3status-rust'
     'commandfinder'
     'conky'
     'cpio'
