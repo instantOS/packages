@@ -22,7 +22,7 @@ depends=(
     'conky'
     'cpio'
     'dash'
-    'delta'
+    'git-delta'
     'dialog'
     'dmidecode'
     'dunst'
