@@ -17,3 +17,4 @@ check-fmt:
 
 fetch-pkgbuilds:
     cp ~/workspace/instantCLI/pkgbuild/ins/* ./packages/ins/
+    cp ~/workspace/instantWM/packaging/arch/PKGBUILD ./packages/instantwm/
