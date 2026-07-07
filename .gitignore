@@ -69,3 +69,5 @@ packages/paperbash/pkg/paperbash/usr/share
 packages/paperbash/pkg/paperbash
 packages/paperbash/src/paperbash
 packages/paperbash/paperbash-*.zst
+/packages/instantwm/*.tar.gz
+/packages/instantwm/src
