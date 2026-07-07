@@ -71,3 +71,13 @@ packages/paperbash/src/paperbash
 packages/paperbash/paperbash-*.zst
 /packages/instantwm/*.tar.gz
 /packages/instantwm/src
+
+/packages/ins/pkg
+/packages/ins/src
+/packages/instantwm/pkg
+/repo/instant.db
+/repo/instant.db.tar.gz
+/repo/instant.db.tar.gz.old
+/repo/instant.files
+/repo/instant.files.tar.gz
+/repo/instant.files.tar.gz.old
