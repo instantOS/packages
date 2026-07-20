@@ -19,10 +19,12 @@ optdepends=(
 source=(
     "$pkgname-$pkgver.tar.gz::https://github.com/instantOS/instantCLI/archive/refs/tags/v$pkgver.tar.gz"
     "$pkgname-x86_64-unknown-linux-gnu-v$pkgver.tgz::https://github.com/instantOS/instantCLI/releases/download/v$pkgver/ins-x86_64-unknown-linux-gnu-v$pkgver.tgz"
+    'ins-welcome.desktop'
 )
 sha256sums=(
     '9219f43bd05429c564653c638921964f2df4ef25445ecefcf69e5a2af8a41854'
     '79f8a3088cf07cf7931feb93900367b24df1256ab97a1fdf8cfedec730cafabb'
+    '8a519163986b1a5f92462790e2fd1c04dec777581f74adc8cc75a4d1d7726bfa'
 )
 
 package() {
@@ -34,4 +36,5 @@ package() {
     for desktop_file in desktop/*.desktop; do
         install -Dm644 "$desktop_file" "$pkgdir/usr/share/applications/$(basename "$desktop_file")"
     done
+    install -Dm644 "$srcdir/ins-welcome.desktop" "$pkgdir/usr/share/applications/ins-welcome.desktop"
 }
