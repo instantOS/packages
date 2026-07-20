@@ -35,7 +35,6 @@ packages/rangerplugins/rangerplugins
 packages/instantwelcome/instantwelcome
 packages/instanttools/instanttools
 packages/instantlaunch/instantlaunch
-packages/instantsettings/instantsettings
 packages/snapdummy/snapdummy
 packages/snap-dummy/snap-dummy
 packages/irox/rox*
@@ -50,13 +49,11 @@ packages/plymouth*/plymouth*
 packages/mpm/mpm
 packages/instantsupport/instantsupport
 packages/instantclipmenu/instantclipmenu
-packages/instantpacman/instantpacman
 packages/instantclipmenu/clipmenu
 packages/instantnotify/instantnotify
 */.MTREE
 packages/st-instantos/st-instantos
 packages/instantsearch/instantsearch
-packages/instantupdate/instantupdate/*
 packages/udevwait/udevwait/*
 packages/commandfinder/commandfinder/*
 packages/imosid/imosid
