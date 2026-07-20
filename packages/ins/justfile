@@ -1,0 +1,91 @@
+# Update PKGBUILD to use an instantCLI release and its published binary.
+# Usage: just bump 0.14.4
+bump version:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    version="{{ version }}"
+    version="${version#v}"
+    if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+        echo "Invalid version: $version" >&2
+        exit 2
+    fi
+
+    temp_dir="$(mktemp -d)"
+    source_dir="$temp_dir/sources"
+    backup="$temp_dir/PKGBUILD"
+    new_pkgbuild=".PKGBUILD.bump.$$"
+    changed=0
+    mkdir -p "$source_dir"
+    cp PKGBUILD "$backup"
+
+    cleanup() {
+        status=$?
+        trap - EXIT
+        rm -f "$new_pkgbuild"
+        if ((status != 0 && changed)); then
+            cp "$backup" PKGBUILD
+            echo "Bump failed; restored the original PKGBUILD." >&2
+        fi
+        rm -rf "$temp_dir"
+        exit "$status"
+    }
+    trap cleanup EXIT
+
+    tag="v$version"
+    source_name="ins-$version.tar.gz"
+    binary_name="ins-x86_64-unknown-linux-gnu-v$version.tgz"
+    release_url="https://github.com/instantOS/instantCLI/releases/download/$tag"
+
+    curl --location --fail --silent --show-error \
+        --output "$source_dir/$source_name" \
+        "https://github.com/instantOS/instantCLI/archive/refs/tags/$tag.tar.gz"
+    curl --location --fail --silent --show-error \
+        --output "$source_dir/$binary_name" \
+        "$release_url/$binary_name"
+    curl --location --fail --silent --show-error \
+        --output "$temp_dir/$binary_name.sha256" \
+        "$release_url/$binary_name.sha256"
+
+    source_sha="$(sha256sum "$source_dir/$source_name" | awk '{print $1}')"
+    binary_sha="$(sha256sum "$source_dir/$binary_name" | awk '{print $1}')"
+    published_sha="$(awk 'NR == 1 {print $1}' "$temp_dir/$binary_name.sha256")"
+    if [[ ! "$published_sha" =~ ^[0-9a-fA-F]{64}$ || "$binary_sha" != "$published_sha" ]]; then
+        echo "Published checksum does not match $binary_name" >&2
+        exit 1
+    fi
+
+    awk -v version="$version" -v source_sha="$source_sha" -v binary_sha="$binary_sha" '
+        BEGIN { in_sums = 0; sum_index = 0; saw_version = 0 }
+        /^pkgver=/ {
+            print "pkgver=" version
+            saw_version = 1
+            next
+        }
+        /^sha256sums=\($/ {
+            in_sums = 1
+            print
+            next
+        }
+        in_sums && /^[[:space:]]*'\''[[:xdigit:]]{64}'\''$/ {
+            sum_index++
+            if (sum_index == 1) print "    '\''" source_sha "'\''"
+            else if (sum_index == 2) print "    '\''" binary_sha "'\''"
+            next
+        }
+        in_sums && /^\)$/ {
+            if (sum_index != 2) exit 42
+            in_sums = 0
+        }
+        { print }
+        END {
+            if (!saw_version || in_sums || sum_index != 2) exit 42
+        }
+    ' PKGBUILD > "$new_pkgbuild"
+    chmod --reference=PKGBUILD "$new_pkgbuild"
+    mv "$new_pkgbuild" PKGBUILD
+    changed=1
+
+    SRCDEST="$source_dir" makepkg --verifysource
+    makepkg --printsrcinfo >/dev/null
+    echo "Updated ins to $version."
