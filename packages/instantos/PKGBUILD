@@ -37,7 +37,6 @@ package() {
         'instantwm'
         'instantlock'
         'instantmenu'
-        'instantwelcome'
         'instantsearch'
         'instantlaunch'
         'grub-instantos'

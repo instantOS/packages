@@ -32,7 +32,6 @@ packages/instantos/instantos
 packages/instantdepend/instantdepend
 packages/instantconf/instantconf
 packages/rangerplugins/rangerplugins
-packages/instantwelcome/instantwelcome
 packages/instanttools/instanttools
 packages/instantlaunch/instantlaunch
 packages/snapdummy/snapdummy
