@@ -1,6 +1,6 @@
 # Maintainer: instantOS <hello@instantos.io>
 pkgname=instantwm
-pkgver=0.1.11
+pkgver=0.1.14
 pkgrel=1
 pkgdesc="A tiling window manager for X11 and Wayland"
 arch=('x86_64')
@@ -41,27 +41,21 @@ depends=(
     'dbus'
     'systemd'
 )
-makedepends=(
-    'rust'
-    'cargo'
-    'cmake'
-    'pkgconf'
+source=(
+    "$pkgname-$pkgver.tar.gz::https://github.com/instantOS/instantWM/archive/refs/tags/v$pkgver.tar.gz"
+    "$pkgname-x86_64-unknown-linux-gnu-v$pkgver.tgz::https://github.com/instantOS/instantWM/releases/download/v$pkgver/instantwm-x86_64-unknown-linux-gnu-v$pkgver.tgz"
 )
-source=("$pkgname-$pkgver.tar.gz::https://github.com/instantOS/instantWM/archive/refs/tags/v$pkgver.tar.gz")
-md5sums=('SKIP')
-options=('!lto')
-
-build() {
-    cd "instantWM-$pkgver"
-    cargo build --release --locked
-}
+sha256sums=(
+    'aedc821abab28850e28e09bbc7d930daab399c21fb65aeb5a5c28f264ce1f705'
+    '0446c577dca6c3e84319434622db296dd91a9f0de7edb3d94adc51533a6ffecd'
+)
 
 package() {
     cd "instantWM-$pkgver"
 
     # Binaries
-    install -Dm755 target/release/instantwm "$pkgdir/usr/bin/instantwm"
-    install -Dm755 target/release/instantwmctl "$pkgdir/usr/bin/instantwmctl"
+    install -Dm755 "$srcdir/instantwm-x86_64-unknown-linux-gnu-v$pkgver/instantwm" "$pkgdir/usr/bin/instantwm"
+    install -Dm755 "$srcdir/instantwm-x86_64-unknown-linux-gnu-v$pkgver/instantwmctl" "$pkgdir/usr/bin/instantwmctl"
 
     # License
     install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
