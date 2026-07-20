@@ -17,7 +17,7 @@ sha256sums=('SKIP')
 
 pkgver() {
     cd $_pkgname
-    echo "$(date '+%Y%m%d%H%M')"
+    date '+%Y%m%d%H%M'
 }
 
 package() {
