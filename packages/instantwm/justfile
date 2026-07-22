@@ -7,9 +7,9 @@ bump version="":
     version="{{ version }}"
     if [[ -z "$version" ]]; then
         echo "No version given; detecting the latest instantWM release..." >&2
-        version="$(curl --location --fail --silent --show-error \
-            https://api.github.com/repos/instantOS/instantWM/releases/latest \
-            | awk -F'"' '/"tag_name"/ {print $4; exit}')"
+        latest_json="$(curl --location --fail --silent --show-error \
+            https://api.github.com/repos/instantOS/instantWM/releases/latest)"
+        version="$(printf '%s' "$latest_json" | awk -F'"' '/"tag_name"/ {print $4; exit}')"
         if [[ -z "$version" ]]; then
             echo "Could not detect the latest release." >&2
             exit 1
