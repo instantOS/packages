@@ -1,6 +1,6 @@
 # Maintainer: paperbenni <paperbenni@gmail.com>
 pkgname=ins
-pkgver=0.14.3
+pkgver=0.14.5
 pkgrel=1
 pkgdesc="A powerful command-line tool for managing dotfiles, system diagnostics, and instantOS configurations"
 arch=('x86_64')
@@ -18,8 +18,8 @@ source=(
     "$pkgname-x86_64-unknown-linux-gnu-v$pkgver.tgz::https://github.com/instantOS/instantCLI/releases/download/v$pkgver/ins-x86_64-unknown-linux-gnu-v$pkgver.tgz"
 )
 sha256sums=(
-    '9219f43bd05429c564653c638921964f2df4ef25445ecefcf69e5a2af8a41854'
-    '79f8a3088cf07cf7931feb93900367b24df1256ab97a1fdf8cfedec730cafabb'
+    '35463b911cf0fdc1cc1ac093ba9774111c94027a6b69f9c68afc0f9d11431ed9'
+    'fb44be3dcc188930ae464690f5c1a01effe1250b14b23e98378726bc25990a10'
 )
 
 package() {
