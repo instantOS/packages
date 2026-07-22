@@ -55,7 +55,6 @@ depends=(
     'otf-firamono-nerd'
     'otf-ipafont'
     'p7zip'
-    'pa-applet-git'
     'pacman-contrib'
     'patch'
     'pavucontrol'
