@@ -1,10 +1,21 @@
 # Update PKGBUILD to use an instantCLI release and its published binary.
-# Usage: just bump 0.14.4
-bump version:
+# Usage: just bump [0.14.4]   (omit the version to use the latest release)
+bump version="":
     #!/usr/bin/env bash
     set -euo pipefail
 
     version="{{ version }}"
+    if [[ -z "$version" ]]; then
+        echo "No version given; detecting the latest instantCLI release..." >&2
+        version="$(curl --location --fail --silent --show-error \
+            https://api.github.com/repos/instantOS/instantCLI/releases/latest \
+            | awk -F'"' '/"tag_name"/ {print $4; exit}')"
+        if [[ -z "$version" ]]; then
+            echo "Could not detect the latest release." >&2
+            exit 1
+        fi
+        echo "Latest release is $version." >&2
+    fi
     version="${version#v}"
     if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
         echo "Invalid version: $version" >&2
