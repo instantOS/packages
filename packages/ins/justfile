@@ -56,10 +56,15 @@ bump version:
     fi
 
     awk -v version="$version" -v source_sha="$source_sha" -v binary_sha="$binary_sha" '
-        BEGIN { in_sums = 0; sum_index = 0; saw_version = 0 }
+        BEGIN { in_sums = 0; sum_index = 0; saw_version = 0; saw_pkgrel = 0 }
         /^pkgver=/ {
             print "pkgver=" version
             saw_version = 1
+            next
+        }
+        /^pkgrel=/ {
+            print "pkgrel=1"
+            saw_pkgrel = 1
             next
         }
         /^sha256sums=\($/ {
@@ -79,7 +84,7 @@ bump version:
         }
         { print }
         END {
-            if (!saw_version || in_sums || sum_index != 2) exit 42
+            if (!saw_version || !saw_pkgrel || in_sums || sum_index != 2) exit 42
         }
     ' PKGBUILD > "$new_pkgbuild"
     chmod --reference=PKGBUILD "$new_pkgbuild"

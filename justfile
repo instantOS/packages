@@ -16,5 +16,4 @@ check-fmt:
     find . -type f -name "*.install" -not -path "*/.*" -exec shfmt -d -s -i 4 {} +
 
 fetch-pkgbuilds:
-    cp ~/workspace/instantCLI/pkgbuild/ins/* ./packages/ins/
     cp ~/workspace/instantWM/packaging/arch/PKGBUILD ./packages/instantwm/
