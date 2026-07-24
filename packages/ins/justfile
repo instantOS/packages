@@ -87,15 +87,16 @@ bump version="":
             sum_index++
             if (sum_index == 1) print "    '\''" source_sha "'\''"
             else if (sum_index == 2) print "    '\''" binary_sha "'\''"
+            else print
             next
         }
         in_sums && /^\)$/ {
-            if (sum_index != 2) exit 42
+            if (sum_index < 2) exit 42
             in_sums = 0
         }
         { print }
         END {
-            if (!saw_version || !saw_pkgrel || in_sums || sum_index != 2) exit 42
+            if (!saw_version || !saw_pkgrel || in_sums || sum_index < 2) exit 42
         }
     ' PKGBUILD > "$new_pkgbuild"
     chmod --reference=PKGBUILD "$new_pkgbuild"

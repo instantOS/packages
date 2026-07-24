@@ -1,6 +1,6 @@
 # Maintainer: paperbenni <paperbenni@gmail.com>
 pkgname=ins
-pkgver=0.14.5
+pkgver=0.14.6
 pkgrel=1
 pkgdesc="A powerful command-line tool for managing dotfiles, system diagnostics, and instantOS configurations"
 arch=('x86_64')
@@ -22,8 +22,9 @@ source=(
     'ins-welcome.desktop'
 )
 sha256sums=(
-    '35463b911cf0fdc1cc1ac093ba9774111c94027a6b69f9c68afc0f9d11431ed9'
-    'fb44be3dcc188930ae464690f5c1a01effe1250b14b23e98378726bc25990a10'
+    '5c72b5aad055e2aaff361ca815174f16d6214022cf14c9d813f81a1f513632a2'
+    '11c045a05abc5c15b867edc5060110e3531ca2390e3dba24be107243d454b93d'
+    '8a519163986b1a5f92462790e2fd1c04dec777581f74adc8cc75a4d1d7726bfa'
 )
 
 package() {
