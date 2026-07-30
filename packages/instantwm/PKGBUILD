@@ -1,6 +1,6 @@
 # Maintainer: instantOS <hello@instantos.io>
 pkgname=instantwm
-pkgver=0.1.15
+pkgver=0.1.18
 pkgrel=1
 pkgdesc="A tiling window manager for X11 and Wayland"
 arch=('x86_64')
@@ -40,14 +40,15 @@ depends=(
     'libwacom'
     'dbus'
     'systemd'
+    'xdg-desktop-portal-wlr'
 )
 source=(
     "$pkgname-$pkgver.tar.gz::https://github.com/instantOS/instantWM/archive/refs/tags/v$pkgver.tar.gz"
     "$pkgname-x86_64-unknown-linux-gnu-v$pkgver.tgz::https://github.com/instantOS/instantWM/releases/download/v$pkgver/instantwm-x86_64-unknown-linux-gnu-v$pkgver.tgz"
 )
 sha256sums=(
-    '9f3db5115391f4df4fe467e3cdb6535e72656ac14f135d8d2700d63c313205a0'
-    '4c395a2a81188d6c84bbaecff990e843ded159b35a7759885281c39542f00a7f'
+    'ee7bef045ab162f0ea9a7999dad0cc83fc39a4e89aba59ca0dc3e304b4b055d9'
+    '5df375dcf6097bc5e8653845918021d4b9d54a502de8f7ea00056abdfde29499'
 )
 
 package() {
@@ -73,4 +74,5 @@ package() {
 
     # Portal routing for Wayland screen sharing/screenshot support
     install -Dm644 resources/instantwm-portals.conf "$pkgdir/usr/share/xdg-desktop-portal/instantwm-portals.conf"
+    install -Dm644 resources/instantwm-session.target "$pkgdir/usr/lib/systemd/user/instantwm-session.target"
 }
