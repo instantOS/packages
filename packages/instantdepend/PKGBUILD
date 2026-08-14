@@ -46,6 +46,7 @@ depends=(
     'lxqt-policykit'
     'm4'
     'make'
+    'mako'
     'mise'
     'mpv'
     'nautilus'
