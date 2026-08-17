@@ -1,10 +1,8 @@
 # Maintainer: paperbenni <paperbenni@gmail.com>
-_pkgname=instantdepend
-pkgname=$_pkgname
-pkgver=20204923be4c9bc
+pkgname=instantdepend
 pkgrel=1
 pkgdesc="meta package for instantOS dependencies"
-url="https://github.com/instantOS/instantMETA"
+url="https://github.com/instantOS/packages"
 arch=('any')
 license=('GPL2')
 depends=(
@@ -88,17 +86,10 @@ depends=(
     'zsh'
 )
 
-makedepends=('bash' 'curl' 'git')
-provides=(instantdepend)
-conflicts=(instantdepend)
-source=("$_pkgname::git+https://github.com/instantOS/instantMETA.git")
-
-sha256sums=('SKIP')
-
-pkgver() {
-    cd $_pkgname
-    echo "$(date '+%Y%m%d%H%M')"
-}
+# metapackage: no sources, nothing to compile.
+# Date-based version keeps the "always newest" behavior the VCS source
+# previously provided (fresh version per build day).
+pkgver=$(date '+%Y%m%d%H%M')
 
 package() {
     depends+=('yay'
@@ -110,9 +101,6 @@ package() {
         'plymouth'
         'plymouth-theme-instantos')
 
-    cd $_pkgname
-    mkdir -p ${pkgdir}/usr/share/instantos
-    echo 'instantdependpackages' >${pkgdir}/usr/share/instantos/dpackages
-    curl -s https://raw.githubusercontent.com/instantOS/instantOS/refs/heads/main/LICENSE >LICENSE
-    install -m644 -D LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+    install -dm755 "${pkgdir}/usr/share/instantos"
+    printf 'instantdependpackages\n' >"${pkgdir}/usr/share/instantos/dpackages"
 }
