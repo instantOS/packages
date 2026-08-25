@@ -8,6 +8,7 @@
 
 build
 build/*
+aur_sources
 packages/instantmenu/instantmenu-*
 packages/instantmenu/instantmenu
 packages/islide/islide-*

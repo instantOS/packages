@@ -4,23 +4,37 @@ PKGBUILDs for instantOS packages
 
 ## how this repo works
 
-On every push to `main`, a GitHub Actions workflow (`.github/workflows/build.yml`)
-builds all packages on a self-hosted runner:
+On every push to `main`, a GitHub Actions workflow
+(`.github/workflows/build.yml`) builds all packages in parallel on
+GitHub-hosted runners:
 
-1. `build.sh` collects the local `packages/*/` PKGBUILDs plus the AUR packages
-   listed in `aurpackages` and builds each one in a throwaway
-   `archlinux:base-devel` Docker container (`container_build.sh`).
-2. Packages, signatures and the `repo-add` database accumulate in `repo/`.
-3. The contents of `repo/` are published to GitHub Pages:
+1. The `layers` job (`layers.py`) parses every PKGBUILD plus the AUR packages
+   from `aurpackages` and computes the dependency layers — packages whose
+   intra-repo dependencies are all satisfied by previous layers. The layers
+   are computed per run; nothing is maintained by hand.
+2. Each layer is built by a matrix job (`build-0` … `build-4`) where every
+   package builds concurrently in its own `archlinux:base-devel` Docker
+   container (`container_build.sh`). Layer-N jobs download the previous
+   layers' packages into `repo/`, so dependencies resolve against them via a
+   local `file://` repository.
+3. The `assemble` job concatenates all build artifacts into the final
+   repository database (`assemble.sh`) and publishes `repo/` to GitHub Pages:
    <https://instantos.github.io/extra/>
 
 Old binaries are also mirrored at [instantos.surge.sh](https://instantos.surge.sh).
 
+The per-job time limit of GitHub-hosted runners (6 h) is no obstacle in this
+layout: it applies per job, and each job builds a single package. The slowest
+package defines the wall-clock time, not the sum of all builds.
+
 ## requirements
 
-- a GitHub Actions runner with Docker. The workflow as configured uses a
-  self-hosted runner (`runs-on: self-hosted`, 48 h timeout): a full build of
-  all packages far exceeds the 6 h limit of GitHub-hosted runners.
+- nothing special: GitHub-hosted `ubuntu-latest` runners (Docker and Python
+  are preinstalled). A self-hosted runner works too, just change `runs-on`.
+- to sign packages (see below):
+  - repository secret `GPG_PRIVATE_KEY`
+  - repository variable `GPG_KEYID`
+  - public key material committed in `packages/instantos-keyring/`
 - to sign packages (see below):
   - repository secret `GPG_PRIVATE_KEY`
   - repository variable `GPG_KEYID`
@@ -32,11 +46,12 @@ Every package is signed (`*.pkg.tar.zst.sig` next to each package) and the
 repository database is signed (`instant.db.tar.gz.sig`). Users can therefore
 enable proper signature checking instead of `SigLevel = Never`.
 
-Signing is active whenever `GPG_PRIVATE_KEY` is provided to `build.sh` (the
-workflow injects it from the repository secret). Without it, the build falls
-back to unsigned packages. A half-configured state (secret set but keyring
-files missing, or vice versa) fails the build on purpose, and the
-`instantos-keyring` package is skipped until real key material is committed.
+Signing is active whenever `GPG_PRIVATE_KEY` is provided (the workflow
+injects it from the repository secret into every build job and the assemble
+job). Without it, the build falls back to unsigned packages. A
+half-configured state (secret set but keyring files missing, or vice versa)
+fails the build on purpose, and the `instantos-keyring` package is skipped
+until real key material is committed.
 
 ### key layout
 
@@ -126,12 +141,22 @@ requires instantOS/instantTOOLS to be installed
 this builds all pkgbuilds from source and also builds all AUR packages from the ./aurpackages file.
 This does not generate a package database nor does it publish anything
 
-`./build.sh` reproduces the CI build (Docker required) and generates the
-repository database in `repo/`. To sign locally, export the same variables the
-CI uses:
+`./build.sh` reproduces the full multi-pass CI build locally (Docker
+required). To sign locally, export the same variables the CI uses:
 
 ```bash
 GPG_PRIVATE_KEY="$(gpg --export-secret-subkeys --armor "$MASTER_FPR" | base64 -w0)" \
 GPG_KEYID="$SIGNING_FPR" \
     ./build.sh
 ```
+
+Single packages can be built without building everything else:
+
+```bash
+./build.sh packages/instantmenu    # local package
+./build.sh aur/yay                 # AUR package
+./build.sh --check                 # validate the signing configuration
+```
+
+`./assemble.sh` builds (and signs) the repository database from whatever
+packages are in `repo/` — the same step the CI assemble job runs.

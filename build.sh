@@ -1,7 +1,14 @@
 #!/bin/bash
 set -e
 
-# This script runs on the HOST
+# This script runs on the HOST (CI runner or local machine)
+#
+# Usage:
+#   ./build.sh              build all packages (multi-pass dependency retry)
+#   ./build.sh <pkg> ...    build only the given packages; each argument is
+#                           either a package directory (packages/<name>) or
+#                           an AUR package (aur/<name>)
+#   ./build.sh --check      validate the signing configuration only
 
 # --- Package signing configuration ------------------------------------------
 # Signing is enabled when GPG_PRIVATE_KEY (base64'd armored export of the
@@ -34,11 +41,22 @@ if [ -n "${GPG_PRIVATE_KEY:-}" ] && [ -z "${GPG_KEYID:-}" ]; then
     exit 1
 fi
 
+# --- Dispatch by mode --------------------------------------------------------
+
+mode=full
+if [ "${1:-}" == "--check" ]; then
+    echo "Signing configuration OK."
+    exit 0
+fi
+if [ $# -gt 0 ]; then
+    mode=single
+fi
+
 # Create repo directory.
-# Signed builds start from a clean repo: every package is rebuilt on each run
-# anyway, and this keeps unsigned leftovers of previous runs out of the
+# Signed full builds start from a clean repo: every package is rebuilt on each
+# run anyway, and this keeps unsigned leftovers of previous runs out of the
 # published repository.
-if [ -n "${GPG_PRIVATE_KEY:-}" ]; then
+if [ "$mode" == "full" ] && [ -n "${GPG_PRIVATE_KEY:-}" ]; then
     rm -rf repo
 fi
 mkdir -p repo
@@ -77,6 +95,37 @@ build_package_in_container() {
 
 # List of packages to build
 packages_to_build=()
+
+# --- Single-package mode: build exactly what was asked for ------------------
+# The CI matrix jobs use this; packages from previous build layers are
+# downloaded into repo/ as plain package files, so create the database they
+# are resolved through when it does not exist yet.
+if [ "$mode" == "single" ]; then
+    if [ ! -f repo/instant.db.tar.gz ] && ls repo/*.pkg.tar.zst >/dev/null 2>&1; then
+        echo "Creating local repository database..."
+        docker run --rm \
+            -v "$(pwd)/repo:/repo" \
+            instantos-builder \
+            bash -c 'repo-add /repo/instant.db.tar.gz /repo/*.pkg.tar.zst'
+    fi
+
+    for pkg in "$@"; do
+        # AUR packages are identified by their aur/<name> path
+        if [[ $pkg == aur/* ]]; then
+            aur_name=${pkg#aur/}
+            mkdir -p aur_sources
+            if [ ! -d "aur_sources/$aur_name" ]; then
+                echo "Fetching AUR package: $aur_name"
+                git clone "https://aur.archlinux.org/$aur_name.git" "aur_sources/$aur_name"
+            fi
+            pkg="aur_sources/$aur_name"
+        fi
+        build_package_in_container "$pkg"
+    done
+
+    echo "Build complete!"
+    exit 0
+fi
 
 # 1. Collect AUR packages first
 echo "Collecting AUR packages..."
