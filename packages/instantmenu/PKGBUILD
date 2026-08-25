@@ -1,39 +1,39 @@
-# Maintainer: paperbenni <paperbenni@gmail.com>
-
-_pkgname=instantmenu
-pkgname=$_pkgname
-pkgver=202105271846
+# Maintainer: instantOS <hello@instantos.io>
+pkgname=instantmenu
+pkgver=5.0.0
 pkgrel=1
-pkgdesc="menu for instantOS"
-url="https://github.com/instantos/instantmenu"
-arch=('any')
+pkgdesc="A dynamic menu for X11 and Wayland"
+arch=('x86_64')
+url="https://github.com/instantOS/instantMENU"
 license=('MIT')
-depends=('sh' 'libxinerama' 'libxft')
-makedepends=('git')
-provides=(instantmenu)
-conflicts=(instantmenu)
-source=("$_pkgname::git+https://github.com/instantOS/instantMENU.git")
-
-sha256sums=('SKIP')
-
-pkgver() {
-    cd $_pkgname
-    echo "$(date '+%Y%m%d%H%M')"
-}
-
-prepare() {
-    cd $_pkgname
-}
-
-build() {
-    cd $_pkgname
-    make \
-        X11INC=/usr/include/X11 \
-        X11LIB=/usr/lib/X11
-}
+depends=('bash' 'fontconfig' 'gcc-libs' 'glibc' 'libxcb' 'libxkbcommon-x11' 'perl')
+optdepends=('i3-wm: launch desktop entries with instantmenu_smartrun desktop')
+source=(
+    "$pkgname-$pkgver.tar.gz::https://github.com/instantOS/instantMENU/archive/refs/tags/v$pkgver.tar.gz"
+    "$pkgname-x86_64-unknown-linux-gnu-v$pkgver.tgz::https://github.com/instantOS/instantMENU/releases/download/v$pkgver/instantmenu-x86_64-unknown-linux-gnu-v$pkgver.tgz"
+)
+sha256sums=(
+    '48b7a0c0516d9b0f3a04057df1cf3e23507e894d3eba267d0d140323ee78feed'
+    'fc276312cfa14b93cd232589808b951f5e1ccc9dc672384cc223d2501b9bcf67'
+)
 
 package() {
-    cd $_pkgname
-    make PREFIX=/usr DESTDIR="$pkgdir" install
-    install -Dm644 LICENSE "$pkgdir"/usr/share/licenses/$pkgname/LICENSE
+    cd "instantMENU-$pkgver"
+
+    # Binaries
+    archive="$srcdir/$pkgname-x86_64-unknown-linux-gnu-v$pkgver"
+    install -Dm755 "$archive/instantmenu" "$pkgdir/usr/bin/instantmenu"
+    install -Dm755 "$archive/itest" "$pkgdir/usr/bin/itest"
+    install -Dm755 "$archive/instantmenu_path" "$pkgdir/usr/bin/instantmenu_path"
+    install -Dm755 "$archive/instantmenu_run" "$pkgdir/usr/bin/instantmenu_run"
+    install -Dm755 "$archive/instantmenu_smartrun" "$pkgdir/usr/bin/instantmenu_smartrun"
+
+    # Man page
+    install -Dm644 "$archive/instantmenu.1" "$pkgdir/usr/share/man/man1/instantmenu.1"
+
+    # License
+    install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+
+    # Docs
+    install -Dm644 README.md "$pkgdir/usr/share/doc/$pkgname/README.md"
 }
