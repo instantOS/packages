@@ -1,30 +1,44 @@
-# Maintainer: paperbenni <paperbenni@gmail.com>
-_pkgname=instantos-keyring
-pkgname=$_pkgname
-pkgver=202112152325
+# Maintainer: instantOS <hello@instantos.io>
+pkgname=instantos-keyring
+# Date-based pkgver, bump whenever the key material below changes.
+# Epoch 1 sorts above the old date-time pkgvers generated from the
+# discontinued git sources.
+epoch=1
+pkgver=20260825
 pkgrel=1
-pkgdesc='instantOS PGP keyring'
-arch=(any)
-url='https://github.com/instantOS/instantos-keyring'
-license=(GPL)
-makedepends=('git')
+pkgdesc="instantOS pacman keyring"
+arch=('any')
+url="https://github.com/instantOS/extra"
+license=('GPL')
 install=$pkgname.install
 
-provides=(instantos-keyring)
-conflicts=(instantos-keyring)
+# Key material vendored in this directory:
+#   instantos.gpg     exported public key(s): gpg --export <MASTER_FPR>
+#   instantos-trusted master key fingerprint(s), one '<FPR>:4:' per line
+#   instantos-revoked fingerprints of revoked keys, if any
+# See README.md ("Package signing") for how to (re)generate these.
+source=(
+    'instantos.gpg'
+    'instantos-trusted'
+    'instantos-revoked'
+)
+sha256sums=(
+    'SKIP'
+    'SKIP'
+    'SKIP'
+)
 
-source=("$_pkgname::git+https://github.com/instantOS/instantos-keyring.git")
-
-sha256sums=('SKIP')
-
-validpgpkeys=('380DFB57A7A140CEEFABC4CF81355D5FEFCC4619') # paperbenni <paperbenni@gmail.com>
-
-pkgver() {
-    cd $_pkgname
-    echo "$(date '+%Y%m%d%H%M')"
+prepare() {
+    if [ ! -s instantos.gpg ] || [ ! -s instantos-trusted ]; then
+        echo "ERROR: $pkgname key material is missing (placeholder files)." >&2
+        echo "Populate instantos.gpg and instantos-trusted first," >&2
+        echo "see README.md section 'Package signing'." >&2
+        return 1
+    fi
 }
 
 package() {
-    cd $_pkgname
-    make PREFIX=/usr DESTDIR="$pkgdir" install
+    install -Dm644 instantos.gpg "$pkgdir/usr/share/pacman/keyrings/instantos.gpg"
+    install -Dm644 instantos-trusted "$pkgdir/usr/share/pacman/keyrings/instantos-trusted"
+    install -Dm644 instantos-revoked "$pkgdir/usr/share/pacman/keyrings/instantos-revoked"
 }

@@ -3,7 +3,44 @@ set -e
 
 # This script runs on the HOST
 
-# Create repo directory
+# --- Package signing configuration ------------------------------------------
+# Signing is enabled when GPG_PRIVATE_KEY (base64'd armored export of the
+# signing subkey) is provided, from CI secrets or the local environment.
+# The matching public key material lives in packages/instantos-keyring/ and
+# must be present whenever signing is enabled. See README.md.
+
+KEYRING_DIR="packages/instantos-keyring"
+if [ -s "$KEYRING_DIR/instantos.gpg" ] && [ -s "$KEYRING_DIR/instantos-trusted" ]; then
+    has_keyring=true
+else
+    has_keyring=false
+fi
+
+if $has_keyring && [ -z "${GPG_PRIVATE_KEY:-}" ]; then
+    echo "ERROR: $KEYRING_DIR contains key material but GPG_PRIVATE_KEY is not set." >&2
+    echo "Configure the signing secrets (README.md, 'Package signing') or" >&2
+    echo "empty the keyring files again." >&2
+    exit 1
+fi
+
+if [ -n "${GPG_PRIVATE_KEY:-}" ] && ! $has_keyring; then
+    echo "ERROR: GPG_PRIVATE_KEY is set but $KEYRING_DIR has no key material." >&2
+    echo "Populate $KEYRING_DIR with the public key (README.md, 'Package signing')." >&2
+    exit 1
+fi
+
+if [ -n "${GPG_PRIVATE_KEY:-}" ] && [ -z "${GPG_KEYID:-}" ]; then
+    echo "ERROR: GPG_PRIVATE_KEY is set but GPG_KEYID (signing subkey id) is not." >&2
+    exit 1
+fi
+
+# Create repo directory.
+# Signed builds start from a clean repo: every package is rebuilt on each run
+# anyway, and this keeps unsigned leftovers of previous runs out of the
+# published repository.
+if [ -n "${GPG_PRIVATE_KEY:-}" ]; then
+    rm -rf repo
+fi
 mkdir -p repo
 # Ensure repo directory is writable by the container user (usually 1000:1000 or similar, but 777 is safest for ephemeral builds)
 chmod 777 repo
@@ -29,6 +66,8 @@ build_package_in_container() {
     docker run --rm \
         -e HOST_UID="$(id -u)" \
         -e HOST_GID="$(id -g)" \
+        -e GPG_PRIVATE_KEY="${GPG_PRIVATE_KEY:-}" \
+        -e GPG_KEYID="${GPG_KEYID:-}" \
         -v "$(pwd)/$pkg_dir:/pkg" \
         -v "$(pwd)/repo:/repo" \
         -v "$(pwd)/container_build.sh:/build.sh" \
@@ -74,6 +113,11 @@ for d in packages/*/; do
     dirname=${dirname#packages/}
 
     if [ -f "packages/$dirname/PKGBUILD" ]; then
+        # The keyring package only builds once real key material is committed
+        if [ "$dirname" == "instantos-keyring" ] && ! $has_keyring; then
+            echo "Skipping instantos-keyring (no key material yet, see README.md)"
+            continue
+        fi
         packages_to_build+=("packages/$dirname")
     fi
 done
