@@ -1,0 +1,42 @@
+default:
+    just --choose
+
+# Run the bump recipe of every package that has one (or a single one: just bump instantwm)
+bump package="":
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    package="{{ package }}"
+    if [[ -n "$package" ]]; then
+        if [[ ! -f "$package/justfile" ]]; then
+            echo "Package '$package' has no justfile." >&2
+            exit 2
+        fi
+        dirs=("$package")
+    else
+        shopt -s nullglob
+        dirs=()
+        for justfile in */justfile; do
+            if grep -q '^bump' "$justfile"; then
+                dirs+=("${justfile%/justfile}")
+            fi
+        done
+        if ((${#dirs[@]} == 0)); then
+            echo "No packages with a bump recipe found." >&2
+            exit 1
+        fi
+    fi
+
+    failed=()
+    for dir in "${dirs[@]}"; do
+        echo "Bumping $dir..."
+        if ! just --justfile "$dir/justfile" --working-directory "$dir" bump; then
+            failed+=("$dir")
+        fi
+    done
+
+    if ((${#failed[@]} > 0)); then
+        echo "Failed to bump: ${failed[*]}" >&2
+        exit 1
+    fi
+    echo "Done!"

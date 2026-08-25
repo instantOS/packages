@@ -1,13 +1,13 @@
 # Maintainer: instantOS <hello@instantos.io>
 pkgname=instantmenu
-pkgver=4.9.3
+pkgver=5.0.0
 # The old C version used a date-based pkgver (e.g. 202105271846), which sorts
 # above semver. Epoch 1 lets existing installs upgrade in place.
 epoch=1
 pkgrel=1
 pkgdesc="A dynamic menu for X11 and Wayland"
 arch=('x86_64')
-url="https://instantos.io"
+url="https://github.com/instantOS/instantMENU"
 license=('MIT')
 depends=(
     'bash'
@@ -18,18 +18,20 @@ depends=(
     'libxkbcommon-x11'
     'perl'
 )
+optdepends=('i3-wm: launch desktop entries with instantmenu_smartrun desktop')
 source=(
     "$pkgname-$pkgver.tar.gz::https://github.com/instantOS/instantMENU/archive/refs/tags/v$pkgver.tar.gz"
     "$pkgname-x86_64-unknown-linux-gnu-v$pkgver.tgz::https://github.com/instantOS/instantMENU/releases/download/v$pkgver/instantmenu-x86_64-unknown-linux-gnu-v$pkgver.tgz"
 )
 sha256sums=(
-    '3862735cda5e85ea45ef6a0e5ff8b7589d205a1bef1cf78ba34a901ae576479d'
-    '2c3209a87a8803b3ec86bd260cedc02aad7d9e85e7065c02768e3bac55c73303'
+    '48b7a0c0516d9b0f3a04057df1cf3e23507e894d3eba267d0d140323ee78feed'
+    'fc276312cfa14b93cd232589808b951f5e1ccc9dc672384cc223d2501b9bcf67'
 )
 
 package() {
     cd "instantMENU-$pkgver"
-    archive="$srcdir/instantmenu-x86_64-unknown-linux-gnu-v$pkgver"
+
+    archive="$srcdir/$pkgname-x86_64-unknown-linux-gnu-v$pkgver"
 
     # Binaries
     install -Dm755 "$archive/instantmenu" "$pkgdir/usr/bin/instantmenu"
