@@ -40,6 +40,7 @@ depends=(
     'libwacom'
     'dbus'
     'systemd'
+    'xdg-desktop-portal-wlr'
 )
 source=(
     "$pkgname-$pkgver.tar.gz::https://github.com/instantOS/instantWM/archive/refs/tags/v$pkgver.tar.gz"
@@ -73,4 +74,5 @@ package() {
 
     # Portal routing for Wayland screen sharing/screenshot support
     install -Dm644 resources/instantwm-portals.conf "$pkgdir/usr/share/xdg-desktop-portal/instantwm-portals.conf"
+    install -Dm644 resources/instantwm-session.target "$pkgdir/usr/lib/systemd/user/instantwm-session.target"
 }
