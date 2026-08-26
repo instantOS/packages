@@ -1,0 +1,13 @@
+# Python tooling configuration for the repository's orchestration code
+# (layers.py and its tests).
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ty.src]
+include = ["layers.py", "tests"]
+
+[tool.ty.rules]
+# tests import pytest, which is not part of ty's own environment in CI
+unresolved-import = "ignore"
