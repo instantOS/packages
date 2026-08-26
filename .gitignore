@@ -5,6 +5,8 @@
 */*.pkg.tar.zst
 */*.tar.xz
 .nvimlog
+__pycache__/
+.pytest_cache/
 
 build
 build/*
