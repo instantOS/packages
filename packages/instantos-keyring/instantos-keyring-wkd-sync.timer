@@ -1,0 +1,7 @@
+[Unit]
+Description=Refresh the instantOS package signing key regularly
+
+[Timer]
+OnCalendar=weekly
+Persistent=true
+RandomizedDelaySec=1week

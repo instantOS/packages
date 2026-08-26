@@ -16,7 +16,7 @@ parallel:
    `file://` repository
 4. `assemble` (`assemble.sh`): signs the packages in an isolated container,
    builds and signs the repository database, and
-   publishes `repo/` to GitHub Pages (<https://instantos.github.io/extra/>)
+   publishes `repo/` at <https://instantos.io/packages/>
    and Surge (<https://instantos.surge.sh>).
 
 ## package signing
@@ -44,13 +44,15 @@ On the workstation (not the runner):
 
 ```bash
 gpg --batch --pinentry-mode loopback --passphrase '' \
-    --quick-generate-key 'instantOS Packages <hello@instantos.io>' cert never
-MASTER_FPR=$(gpg --list-keys --with-colons | awk -F: '/^fpr:/ {print $10; exit}')
+    --quick-generate-key 'instantOS Packages <hello@instantos.io>' rsa3072 cert never
+MASTER_FPR=$(gpg --with-colons --fingerprint hello@instantos.io | \
+    awk -F: '$1 == "fpr" {print $10; exit}')
 
 # dedicated signing subkey, valid for 2 years
 gpg --batch --pinentry-mode loopback --passphrase '' \
     --quick-add-key "$MASTER_FPR" rsa3072 sign 2y
-SIGNING_FPR=$(gpg --list-keys --with-colons | awk -F: '/^fpr:/ {f[++n]=$10} END {print f[2]}')
+SIGNING_FPR=$(gpg --with-colons --with-subkey-fingerprint \
+    --list-keys "$MASTER_FPR" | awk -F: '$1 == "fpr" && ++n == 2 {print $10}')
 
 # publish the public key so users can bootstrap trust
 gpg --keyserver keyserver.ubuntu.com --send-keys "$MASTER_FPR"
@@ -64,6 +66,11 @@ gpg --export "$MASTER_FPR" >instantos.gpg
 echo "$MASTER_FPR:4:" >instantos-trusted
 : >instantos-revoked
 ```
+
+Publish that public key through WKD as described in
+`packages/instantos-keyring/README.md`. WKD hosting requires an HTTPS
+`openpgpkey.instantos.io` endpoint; it must be updated whenever a signing
+subkey is added or revoked.
 
 Repository configuration (GitHub → Settings → Secrets and variables → Actions):
 
@@ -92,12 +99,17 @@ Add your email as the `SURGE_LOGIN` secret and the output token as the `SURGE_TO
 
 ### rotating and revoking keys
 
+Rotate before the old signing subkey expires. Publish the new public subkey
+through both the keyring package and WKD while CI still signs with the old
+subkey; wait at least two weekly refresh windows before switching CI.
+
 ```bash
 # issue a fresh signing subkey
 gpg --batch --pinentry-mode loopback --passphrase '' \
     --quick-add-key "$MASTER_FPR" rsa3072 sign 2y
-# then update the GPG_PRIVATE_KEY secret and GPG_KEYID variable, re-export
-# instantos.gpg and bump the keyring pkgver
+# first re-export instantos.gpg, republish WKD, bump the keyring pkgver,
+# and publish that keyring package using the OLD signing subkey
+# after the overlap, update GPG_PRIVATE_KEY and GPG_KEYID to the new subkey
 
 # revoke a compromised subkey, then also list it in instantos-revoked
 gpg --quick-revoke-key "$MASTER_FPR" "$SIGNING_FPR" compromised
@@ -112,9 +124,7 @@ Rotation requires no user action.
 ```ini
 [instant]
 SigLevel = Required TrustedOnly
-Server = https://instantos.github.io/extra/
-# or Surge mirror:
-# Server = https://instantos.surge.sh
+Include = /etc/pacman.d/instantmirrorlist
 ```
 
 Bootstrap trust once (verify the fingerprint against a trusted source first):
@@ -125,6 +135,24 @@ pacman-key --lsign-key <MASTER_FPR>
 ```
 
 or install the `instantos-keyring` package (`pacman-key --populate instantos`).
+
+Fresh instantOS installation media must include and populate
+`instantos-keyring` before enabling `Required TrustedOnly`; the dependency
+keeps an established trust root updated but cannot bootstrap it from a
+repository whose signatures are not trusted yet.
+
+The `instantos` metapackage depends on both `instantos-keyring` and
+`instantos-mirrorlist`. New installations therefore receive the trust material
+and a package-owned `/etc/pacman.d/instantmirrorlist`; future key and mirror
+changes arrive through normal package upgrades. The file is tracked as a
+pacman backup file, so local edits are preserved as `.pacnew` changes and are
+visible to `pacdiff`. Existing systems keep their current `SigLevel` setting;
+installing these packages does not enable mandatory signature checking.
+
+`instantos-keyring-wkd-sync.timer`, enabled by the keyring package, refreshes
+the existing instantOS master key from `hello@instantos.io` via WKD once a
+week. See `packages/instantos-keyring/README.md` for the required WKD hosting
+setup.
 
 ## building locally
 

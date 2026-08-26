@@ -8,9 +8,10 @@ pkgver=20260825
 pkgrel=1
 pkgdesc="instantOS pacman keyring"
 arch=('any')
-url="https://github.com/instantOS/extra"
+url="https://github.com/instantOS/packages"
 license=('GPL')
 install=$pkgname.install
+depends=('bash' 'pacman')
 
 # Key material vendored in this directory:
 #   instantos.gpg     exported public key(s): gpg --export <MASTER_FPR>
@@ -21,8 +22,14 @@ source=(
     'instantos.gpg'
     'instantos-trusted'
     'instantos-revoked'
+    'instantos-keyring-wkd-sync'
+    'instantos-keyring-wkd-sync.service'
+    'instantos-keyring-wkd-sync.timer'
 )
 sha256sums=(
+    'SKIP'
+    'SKIP'
+    'SKIP'
     'SKIP'
     'SKIP'
     'SKIP'
@@ -41,4 +48,16 @@ package() {
     install -Dm644 instantos.gpg "$pkgdir/usr/share/pacman/keyrings/instantos.gpg"
     install -Dm644 instantos-trusted "$pkgdir/usr/share/pacman/keyrings/instantos-trusted"
     install -Dm644 instantos-revoked "$pkgdir/usr/share/pacman/keyrings/instantos-revoked"
+
+    install -Dm755 instantos-keyring-wkd-sync \
+        "$pkgdir/usr/bin/instantos-keyring-wkd-sync"
+    install -Dm644 instantos-keyring-wkd-sync.service \
+        "$pkgdir/usr/lib/systemd/system/instantos-keyring-wkd-sync.service"
+    install -Dm644 instantos-keyring-wkd-sync.timer \
+        "$pkgdir/usr/lib/systemd/system/instantos-keyring-wkd-sync.timer"
+
+    # Vendor-enable the timer, matching archlinux-keyring's WKD refresh timer.
+    install -dm755 "$pkgdir/usr/lib/systemd/system/timers.target.wants"
+    ln -s ../instantos-keyring-wkd-sync.timer \
+        "$pkgdir/usr/lib/systemd/system/timers.target.wants/instantos-keyring-wkd-sync.timer"
 }

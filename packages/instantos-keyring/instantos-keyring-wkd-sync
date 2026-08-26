@@ -1,0 +1,59 @@
+#!/usr/bin/bash
+# Refresh the existing instantOS master key from its authoritative WKD entry.
+# A WKD response can update subkeys and revocations, but cannot make a different
+# master key trusted: trust remains pinned by instantos-trusted.
+set -eu
+
+readonly key_email="hello@instantos.io"
+readonly homedir="$(pacman-conf GPGDir)"
+readonly trusted_file="/usr/share/pacman/keyrings/instantos-trusted"
+
+if ((EUID != 0)); then
+    printf 'This script must be run as root.\n' >&2
+    exit 1
+fi
+
+if [[ ! -d $homedir || ! -r $trusted_file ]]; then
+    printf 'The pacman or instantOS keyring is not initialized; skipping refresh.\n' >&2
+    exit 0
+fi
+
+expected_fingerprints="$(cut -d: -f1 "$trusted_file")"
+current_fingerprint="$({
+    gpg --homedir "$homedir" --no-permission-warning \
+        --list-options show-only-fpr-mbox --list-keys "$key_email" || true
+} | awk -v email="$key_email" '$2 == email { print $1; exit }')"
+
+if [[ -z $current_fingerprint ]] || ! grep -Fxq "$current_fingerprint" <<<"$expected_fingerprints"; then
+    printf 'No trusted instantOS key with UID %s is installed; skipping refresh.\n' \
+        "$key_email" >&2
+    exit 0
+fi
+
+printf 'Refreshing instantOS key %s from WKD...\n' "$current_fingerprint"
+temporary_homedir="$(mktemp -d)"
+trap 'rm -rf "$temporary_homedir"' EXIT
+chmod 700 "$temporary_homedir"
+
+# Fetch into a disposable keyring first. This prevents a broken or compromised
+# WKD endpoint from adding unrelated, untrusted keys to pacman's keyring.
+gpg --homedir "$temporary_homedir" \
+    --quiet \
+    --no-permission-warning \
+    --auto-key-locate clear,nodefault,wkd \
+    --locate-external-keys "$key_email"
+
+fetched_fingerprint="$(
+    gpg --homedir "$temporary_homedir" --no-permission-warning \
+        --list-options show-only-fpr-mbox --list-keys "$key_email" |
+        awk -v email="$key_email" '$2 == email { print $1; exit }'
+)"
+if [[ $fetched_fingerprint != "$current_fingerprint" ]]; then
+    printf 'WKD returned unexpected key %s instead of %s; refusing it.\n' \
+        "${fetched_fingerprint:-<none>}" "$current_fingerprint" >&2
+    exit 1
+fi
+
+gpg --homedir "$temporary_homedir" --batch --export "$current_fingerprint" \
+    >"$temporary_homedir/instantos.gpg"
+pacman-key --add "$temporary_homedir/instantos.gpg"
