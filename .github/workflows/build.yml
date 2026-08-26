@@ -17,12 +17,6 @@ concurrency:
   group: "pages"
   cancel-in-progress: false
 
-env:
-  # base64'd `gpg --export-secret-subkeys --armor <key>` export
-  GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-  # fingerprint (or id) of the signing subkey
-  GPG_KEYID: ${{ vars.GPG_KEYID }}
-
 jobs:
   # Fast static checks (shell formatting, python types, unit tests) that gate
   # the build layers: a lint failure costs seconds here instead of build
@@ -257,6 +251,10 @@ jobs:
           path: repo
 
       - name: Assemble repository database
+        env:
+          # Only this isolated signing step receives the secret key.
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_KEYID: ${{ vars.GPG_KEYID }}
         run: ./assemble.sh
 
       - name: Generate Directory Listing

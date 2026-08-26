@@ -10,11 +10,12 @@ parallel:
 1. `lint`: shfmt, `ty`, pytest (`lint.sh`)
 2. `layers` (`layers.py`): computes dependency layers from all PKGBUILDs
    and `aurpackages` — each layer only depends on previous layers
-3. `build-0` … `build-4`: one matrix job per layer, one package per job in
+3. `build-0` … `build-4`: one matrix job per layer, one unsigned package per job in
    an `archlinux:base-devel` container (`container_build.sh`); previous
    layers' packages are downloaded into `repo/` and resolved via a local
    `file://` repository
-4. `assemble` (`assemble.sh`): builds the repository database and
+4. `assemble` (`assemble.sh`): signs the packages in an isolated container,
+   builds and signs the repository database, and
    publishes `repo/` to GitHub Pages: <https://instantos.github.io/extra/>
 
 Old binaries are also mirrored at [instantos.surge.sh](https://instantos.surge.sh).
@@ -24,10 +25,12 @@ Old binaries are also mirrored at [instantos.surge.sh](https://instantos.surge.s
 Packages and the repository database are signed (`*.pkg.tar.zst.sig`,
 `instant.db.tar.gz.sig`).
 
-Signing is enabled when `GPG_PRIVATE_KEY` is set; without it, builds are
-unsigned. A half-configured state (secret set but keyring files missing,
-or vice versa) fails the build, and `instantos-keyring` is skipped until
-key material is committed.
+Signing is enabled in the assembly stage when `GPG_PRIVATE_KEY` is set;
+without it, the assembled repository is unsigned. Package builds never receive
+the private key: all package code finishes before a separate container, with
+only `repo/` mounted, signs the artifacts and repository database. A secret
+without matching keyring material fails the build, and `instantos-keyring` is
+skipped until key material is committed.
 
 ### key layout
 
@@ -131,7 +134,7 @@ Single-package builds:
 ./build.sh --check                 # validate the signing configuration
 ```
 
-`./assemble.sh` builds (and signs) the repository database from the
-packages in `repo/`.
+`./assemble.sh` signs the packages and builds (and signs) the repository
+database from the packages in `repo/`.
 
 `just check` / `./lint.sh`: shfmt, `ty`, pytest.

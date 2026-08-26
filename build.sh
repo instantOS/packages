@@ -23,13 +23,6 @@ else
     has_keyring=false
 fi
 
-if $has_keyring && [ -z "${GPG_PRIVATE_KEY:-}" ]; then
-    echo "ERROR: $KEYRING_DIR contains key material but GPG_PRIVATE_KEY is not set." >&2
-    echo "Configure the signing secrets (README.md, 'Package signing') or" >&2
-    echo "empty the keyring files again." >&2
-    exit 1
-fi
-
 if [ -n "${GPG_PRIVATE_KEY:-}" ] && ! $has_keyring; then
     echo "ERROR: GPG_PRIVATE_KEY is set but $KEYRING_DIR has no key material." >&2
     echo "Populate $KEYRING_DIR with the public key (README.md, 'Package signing')." >&2
@@ -54,8 +47,7 @@ fi
 
 # Create repo directory.
 # Signed full builds start from a clean repo: every package is rebuilt on each
-# run anyway, and this keeps unsigned leftovers of previous runs out of the
-# published repository.
+# run anyway, and this keeps leftovers of previous runs out of the repository.
 if [ "$mode" == "full" ] && [ -n "${GPG_PRIVATE_KEY:-}" ]; then
     rm -rf repo
 fi
@@ -84,8 +76,6 @@ build_package_in_container() {
     docker run --rm \
         -e HOST_UID="$(id -u)" \
         -e HOST_GID="$(id -g)" \
-        -e GPG_PRIVATE_KEY="${GPG_PRIVATE_KEY:-}" \
-        -e GPG_KEYID="${GPG_KEYID:-}" \
         -v "$(pwd)/$pkg_dir:/pkg" \
         -v "$(pwd)/repo:/repo" \
         -v "$(pwd)/container_build.sh:/build.sh" \
@@ -122,6 +112,12 @@ if [ "$mode" == "single" ]; then
         fi
         build_package_in_container "$pkg"
     done
+
+    # Signing happens after all package code has stopped, in a container that
+    # can see the artifacts but cannot see the PKGBUILD or its build directory.
+    if [ -n "${GPG_PRIVATE_KEY:-}" ]; then
+        ./assemble.sh
+    fi
 
     echo "Build complete!"
     exit 0
@@ -212,6 +208,12 @@ while [ ${#packages_to_build[@]} -gt 0 ]; do
         exit 1
     fi
 done
+
+# Never expose the signing key to a package build container. The assembler is
+# the only process that receives it and only the artifact directory is mounted.
+if [ -n "${GPG_PRIVATE_KEY:-}" ]; then
+    ./assemble.sh
+fi
 
 # Cleanup
 rm -rf aur_sources
