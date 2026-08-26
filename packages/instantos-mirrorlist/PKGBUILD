@@ -1,0 +1,16 @@
+# Maintainer: instantOS <hello@instantos.io>
+pkgname=instantos-mirrorlist
+pkgver=20260826
+pkgrel=1
+pkgdesc="Mirror list for the instantOS package repository"
+arch=('any')
+url="https://github.com/instantOS/packages"
+license=('GPL')
+backup=('etc/pacman.d/instantmirrorlist')
+
+source=('instantmirrorlist')
+sha256sums=('SKIP')
+
+package() {
+    install -Dm644 instantmirrorlist "$pkgdir/etc/pacman.d/instantmirrorlist"
+}

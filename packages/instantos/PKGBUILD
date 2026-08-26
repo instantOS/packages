@@ -5,7 +5,11 @@ pkgdesc="meta package for instantOS"
 url="https://github.com/instantOS/packages"
 arch=('any')
 license=('GPL2')
-depends=('git')
+depends=(
+    'git'
+    'instantos-keyring'
+    'instantos-mirrorlist'
+)
 
 # metapackage: no sources, nothing to compile.
 # Date-based version keeps the "always newest" behavior the VCS source
