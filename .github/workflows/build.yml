@@ -264,6 +264,14 @@ jobs:
           show-hidden: false
           overwrite: true
 
+      - name: Deploy to Surge.sh
+        uses: dswistowski/surge-sh-action@v1
+        with:
+          domain: 'instantos.surge.sh'
+          project: './repo'
+          login: ${{ secrets.SURGE_LOGIN }}
+          token: ${{ secrets.SURGE_TOKEN }}
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
 

@@ -16,9 +16,8 @@ parallel:
    `file://` repository
 4. `assemble` (`assemble.sh`): signs the packages in an isolated container,
    builds and signs the repository database, and
-   publishes `repo/` to GitHub Pages: <https://instantos.github.io/extra/>
-
-Old binaries are also mirrored at [instantos.surge.sh](https://instantos.surge.sh).
+   publishes `repo/` to GitHub Pages (<https://instantos.github.io/extra/>)
+   and Surge (<https://instantos.surge.sh>).
 
 ## package signing
 
@@ -71,6 +70,25 @@ Repository configuration (GitHub → Settings → Secrets and variables → Acti
 - secret `GPG_PRIVATE_KEY`:
   `gpg --export-secret-subkeys --armor "$MASTER_FPR" | base64 -w0`
 - variable `GPG_KEYID`: `$SIGNING_FPR`
+- secret `SURGE_LOGIN`: your Surge account email address
+- secret `SURGE_TOKEN`: your Surge authentication token (see below)
+
+### surge deployment setup
+
+To publish packages to [instantos.surge.sh](https://instantos.surge.sh), generate a Surge token locally:
+
+```bash
+# Log in to Surge (prompts for email and password / creates account if new)
+npx surge login
+
+# Retrieve your authentication token
+npx surge token
+
+# (Optional) Or generate a scoped token for the domain:
+npx surge tokens add --domain instantos.surge.sh -m "github-actions"
+```
+
+Add your email as the `SURGE_LOGIN` secret and the output token as the `SURGE_TOKEN` secret in your GitHub repository settings.
 
 ### rotating and revoking keys
 
@@ -95,6 +113,8 @@ Rotation requires no user action.
 [instant]
 SigLevel = Required TrustedOnly
 Server = https://instantos.github.io/extra/
+# or Surge mirror:
+# Server = https://instantos.surge.sh
 ```
 
 Bootstrap trust once (verify the fingerprint against a trusted source first):
