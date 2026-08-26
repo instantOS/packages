@@ -3,10 +3,11 @@
 
 Every packages/*/ PKGBUILD and every AUR package from ./aurpackages is
 inspected for depends/makedepends pointing at packages built by this
-repository. Packages are then grouped into layers: layer N contains the
-packages whose deepest internal dependency lives in layer N-1, so all
-packages within a layer can be built concurrently once all previous
-layers exist.
+repository. Local PKGBUILDs are trusted repository code; mutable AUR metadata
+is read from declarative .SRCINFO files and is never executed. Packages are
+then grouped into layers: layer N contains the packages whose deepest internal
+dependency lives in layer N-1, so all packages within a layer can be built
+concurrently once all previous layers exist.
 
 Writes level0..levelN as JSON arrays (GitHub Actions matrix "include"
 format) to $GITHUB_OUTPUT when set, and a human-readable summary to
@@ -33,6 +34,10 @@ ROOT = Path(__file__).resolve().parent
 # workflow (and this constant) if the dependency chain ever grows deeper.
 MAX_LAYERS = 5
 
+# GitHub's Arch Linux build runners are x86_64. Architecture-specific .SRCINFO
+# fields for other targets must not affect this build graph.
+TARGET_ARCH = "x86_64"
+
 EXTRACT_SH = r"""
 cd "$1"
 source ./PKGBUILD
@@ -45,7 +50,7 @@ for x in "${provides[@]}"; do echo "PROVIDES $x"; done
 
 @dataclass
 class PkgMeta:
-    """Metadata extracted from one PKGBUILD."""
+    """Metadata for one source package build."""
 
     pkgname: str
     depends: set[str] = field(default_factory=set)
@@ -109,6 +114,91 @@ def extract_meta(pkgdir: Path) -> PkgMeta:
         sys.exit(f"ERROR: {pkgdir}/PKGBUILD {exc}")
 
 
+def _srcinfo_values(
+    base: dict[str, list[str]], package: dict[str, list[str]], key: str
+) -> set[str]:
+    """Resolve generic and target-architecture values for one package."""
+    resolved: set[str] = set()
+    for field in (key, f"{key}_{TARGET_ARCH}"):
+        inherited = base.get(field, [])
+        local = package.get(field)
+        if local is None:
+            values = inherited
+        elif local and local[0] == "":
+            # An empty first assignment explicitly unsets inherited values.
+            values = local[1:]
+        else:
+            values = [*inherited, *local]
+        resolved.update(value for value in values if value)
+    return resolved
+
+
+def parse_srcinfo(text: str) -> PkgMeta:
+    """Parse declarative AUR .SRCINFO metadata without executing package code."""
+    base_name: str | None = None
+    base: dict[str, list[str]] = {}
+    packages: list[tuple[str, dict[str, list[str]]]] = []
+    current: dict[str, list[str]] | None = None
+
+    for lineno, raw_line in enumerate(text.splitlines(), start=1):
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        key, separator, value = line.partition("=")
+        if not separator:
+            raise ValueError(f"line {lineno}: expected 'key = value'")
+        key = key.strip()
+        value = value.strip()
+        if not key:
+            raise ValueError(f"line {lineno}: empty key")
+
+        if key == "pkgbase":
+            if base_name is not None or packages or not value:
+                raise ValueError(f"line {lineno}: invalid pkgbase section")
+            base_name = value
+            current = base
+        elif key == "pkgname":
+            if base_name is None or not value:
+                raise ValueError(f"line {lineno}: invalid pkgname section")
+            fields: dict[str, list[str]] = {}
+            packages.append((value, fields))
+            current = fields
+        elif current is None:
+            raise ValueError(f"line {lineno}: metadata precedes pkgbase")
+        else:
+            current.setdefault(key, []).append(value)
+
+    if base_name is None:
+        raise ValueError("does not define pkgbase")
+    if not packages:
+        raise ValueError("does not define any pkgname sections")
+    package_names = [name for name, _ in packages]
+    if len(set(package_names)) != len(package_names):
+        raise ValueError("defines duplicate pkgname sections")
+
+    depends: set[str] = set()
+    makedepends: set[str] = set()
+    provides: set[str] = set(package_names[1:])
+    for _, package in packages:
+        depends.update(_srcinfo_values(base, package, "depends"))
+        makedepends.update(_srcinfo_values(base, package, "makedepends"))
+        provides.update(_srcinfo_values(base, package, "provides"))
+    return PkgMeta(package_names[0], depends, makedepends, provides)
+
+
+def extract_aur_meta(pkgdir: Path) -> PkgMeta:
+    """Read an AUR package's required .SRCINFO file, failing closed."""
+    srcinfo = pkgdir / ".SRCINFO"
+    try:
+        text = srcinfo.read_text()
+    except OSError as exc:
+        sys.exit(f"ERROR: cannot read AUR metadata {srcinfo}: {exc}")
+    try:
+        return parse_srcinfo(text)
+    except ValueError as exc:
+        sys.exit(f"ERROR: invalid AUR metadata {srcinfo}: {exc}")
+
+
 def canon(dep: str) -> str:
     """Strip version constraints: 'foo>=1.2' -> 'foo'."""
     return re.split(r"[<>=]", dep)[0].strip()
@@ -164,7 +254,7 @@ def collect_nodes(root: Path | None = None) -> dict[str, PkgMeta]:
                         ],
                         check=True,
                     )
-                nodes[f"aur/{name}"] = extract_meta(target)
+                nodes[f"aur/{name}"] = extract_aur_meta(target)
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
     return nodes

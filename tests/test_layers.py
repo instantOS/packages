@@ -20,7 +20,7 @@ def test_canon_strips_version_constraints():
     assert layers.canon("foo=1:2.0-1") == "foo"
 
 
-# --- PKGBUILD metadata extraction ---------------------------------------------
+# --- metadata extraction ------------------------------------------------------
 
 
 def test_parse_extract_output():
@@ -65,6 +65,63 @@ def test_extract_meta_sources_a_real_pkgbuild(tmp_path):
         makedepends={"git"},
         provides={"hello-world"},
     )
+
+
+def test_parse_srcinfo_handles_split_packages_and_target_architecture():
+    text = """
+pkgbase = example
+  depends = common
+  depends_x86_64 = x86-runtime
+  depends_aarch64 = arm-runtime
+  makedepends = cmake
+  makedepends_x86_64 = rust
+  provides = base-virtual
+
+pkgname = example
+  depends = cli-runtime
+  provides = example-cli
+
+pkgname = example-docs
+  depends = docs-runtime
+  provides_x86_64 = example-help
+"""
+    assert layers.parse_srcinfo(text) == PkgMeta(
+        pkgname="example",
+        depends={"common", "x86-runtime", "cli-runtime", "docs-runtime"},
+        makedepends={"cmake", "rust"},
+        provides={
+            "base-virtual",
+            "example-cli",
+            "example-docs",
+            "example-help",
+        },
+    )
+
+
+def test_parse_srcinfo_honors_empty_override():
+    text = """
+pkgbase = example
+  depends = inherited
+pkgname = example
+  depends =
+  depends = replacement
+"""
+    assert layers.parse_srcinfo(text) == PkgMeta(
+        pkgname="example", depends={"replacement"}
+    )
+
+
+@pytest.mark.parametrize(
+    ("text", "message"),
+    [
+        ("pkgname = nope\n", "invalid pkgname section"),
+        ("pkgbase = nope\n", "does not define any pkgname"),
+        ("this is not metadata\n", "expected 'key = value'"),
+    ],
+)
+def test_parse_srcinfo_rejects_malformed_metadata(text, message):
+    with pytest.raises(ValueError, match=message):
+        layers.parse_srcinfo(text)
 
 
 # --- graph construction and layering ------------------------------------------
@@ -183,6 +240,41 @@ def test_collect_nodes_includes_populated_keyring(tmp_path):
         "packages/instantos-keyring",
         "packages/other",
     }
+
+
+def test_collect_nodes_parses_aur_srcinfo_without_executing_pkgbuild(
+    monkeypatch, tmp_path
+):
+    (tmp_path / "packages").mkdir()
+    (tmp_path / "aurpackages").write_text("hostile\n")
+    marker = tmp_path / "executed"
+
+    def fake_run(args, **kwargs):
+        assert args[:2] == ["git", "clone"]
+        target = layers.Path(args[-1])
+        target.mkdir()
+        (target / "PKGBUILD").write_text(f"touch {marker}\n")
+        (target / ".SRCINFO").write_text(
+            "pkgbase = hostile\n"
+            "  depends = local-dependency\n"
+            "pkgname = hostile\n"
+        )
+
+    monkeypatch.setattr(layers.subprocess, "run", fake_run)
+
+    assert layers.collect_nodes(root=tmp_path) == {
+        "aur/hostile": PkgMeta("hostile", depends={"local-dependency"})
+    }
+    assert not marker.exists()
+
+
+def test_extract_aur_meta_fails_closed_without_srcinfo(tmp_path):
+    pkgdir = tmp_path / "aur-package"
+    pkgdir.mkdir()
+    (pkgdir / "PKGBUILD").write_text("pkgname=aur-package\n")
+
+    with pytest.raises(SystemExit, match="cannot read AUR metadata"):
+        layers.extract_aur_meta(pkgdir)
 
 
 # --- main ------------------------------------------------------------------------
