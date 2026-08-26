@@ -4,65 +4,41 @@ PKGBUILDs for instantOS packages
 
 ## how this repo works
 
-On every push to `main`, a GitHub Actions workflow
-(`.github/workflows/build.yml`) builds all packages in parallel on
-GitHub-hosted runners:
+On push to `main`, `.github/workflows/build.yml` builds all packages in
+parallel:
 
-1. The `layers` job (`layers.py`) parses every PKGBUILD plus the AUR packages
-   from `aurpackages` and computes the dependency layers — packages whose
-   intra-repo dependencies are all satisfied by previous layers. The layers
-   are computed per run; nothing is maintained by hand.
-2. Each layer is built by a matrix job (`build-0` … `build-4`) where every
-   package builds concurrently in its own `archlinux:base-devel` Docker
-   container (`container_build.sh`). Layer-N jobs download the previous
-   layers' packages into `repo/`, so dependencies resolve against them via a
-   local `file://` repository.
-3. The `assemble` job concatenates all build artifacts into the final
-   repository database (`assemble.sh`) and publishes `repo/` to GitHub Pages:
-   <https://instantos.github.io/extra/>
+1. `lint`: shfmt, `ty`, pytest (`lint.sh`)
+2. `layers` (`layers.py`): computes dependency layers from all PKGBUILDs
+   and `aurpackages` — each layer only depends on previous layers
+3. `build-0` … `build-4`: one matrix job per layer, one package per job in
+   an `archlinux:base-devel` container (`container_build.sh`); previous
+   layers' packages are downloaded into `repo/` and resolved via a local
+   `file://` repository
+4. `assemble` (`assemble.sh`): builds the repository database and
+   publishes `repo/` to GitHub Pages: <https://instantos.github.io/extra/>
 
 Old binaries are also mirrored at [instantos.surge.sh](https://instantos.surge.sh).
 
-The per-job time limit of GitHub-hosted runners (6 h) is no obstacle in this
-layout: it applies per job, and each job builds a single package. The slowest
-package defines the wall-clock time, not the sum of all builds.
-
-## requirements
-
-- nothing special: GitHub-hosted `ubuntu-latest` runners (Docker and Python
-  are preinstalled). A self-hosted runner works too, just change `runs-on`.
-- to sign packages (see below):
-  - repository secret `GPG_PRIVATE_KEY`
-  - repository variable `GPG_KEYID`
-  - public key material committed in `packages/instantos-keyring/`
-- to sign packages (see below):
-  - repository secret `GPG_PRIVATE_KEY`
-  - repository variable `GPG_KEYID`
-  - public key material committed in `packages/instantos-keyring/`
-
 ## package signing
 
-Every package is signed (`*.pkg.tar.zst.sig` next to each package) and the
-repository database is signed (`instant.db.tar.gz.sig`). Users can therefore
-enable proper signature checking instead of `SigLevel = Never`.
+Packages and the repository database are signed (`*.pkg.tar.zst.sig`,
+`instant.db.tar.gz.sig`).
 
-Signing is active whenever `GPG_PRIVATE_KEY` is provided (the workflow
-injects it from the repository secret into every build job and the assemble
-job). Without it, the build falls back to unsigned packages. A
-half-configured state (secret set but keyring files missing, or vice versa)
-fails the build on purpose, and the `instantos-keyring` package is skipped
-until real key material is committed.
+Signing is enabled when `GPG_PRIVATE_KEY` is set; without it, builds are
+unsigned. A half-configured state (secret set but keyring files missing,
+or vice versa) fails the build, and `instantos-keyring` is skipped until
+key material is committed.
 
 ### key layout
 
-- An **offline master key** (certify only) — never leaves your workstation,
-  never expires. Its fingerprint is what users ultimately trust.
-- A **passphrase-less signing subkey** with an expiry, exported into the CI
-  secret. If the runner is ever compromised, only this revocable subkey leaks.
+- **offline master key** (certify only, no expiry): stays on the
+  workstation; its fingerprint is what users trust
+- **passphrase-less signing subkey** (2 y expiry): exported to the CI
+  secret; only this subkey leaks if a runner is compromised
 
 ### one-time setup
 
-On your workstation (not the runner):
+On the workstation (not the runner):
 
 ```bash
 gpg --batch --pinentry-mode loopback --passphrase '' \
@@ -87,13 +63,11 @@ echo "$MASTER_FPR:4:" >instantos-trusted
 : >instantos-revoked
 ```
 
-Configure the repository (GitHub → Settings → Secrets and variables → Actions):
+Repository configuration (GitHub → Settings → Secrets and variables → Actions):
 
 - secret `GPG_PRIVATE_KEY`:
   `gpg --export-secret-subkeys --armor "$MASTER_FPR" | base64 -w0`
 - variable `GPG_KEYID`: `$SIGNING_FPR`
-
-The next push to `main` builds a fully signed repository.
 
 ### rotating and revoking keys
 
@@ -108,7 +82,7 @@ gpg --batch --pinentry-mode loopback --passphrase '' \
 gpg --quick-revoke-key "$MASTER_FPR" "$SIGNING_FPR" compromised
 ```
 
-Rotation needs no action from users; the master key they trust stays the same.
+Rotation requires no user action.
 
 ## using the repository
 
@@ -127,8 +101,7 @@ pacman-key --recv-keys <MASTER_FPR>
 pacman-key --lsign-key <MASTER_FPR>
 ```
 
-or install the `instantos-keyring` package, which does the equivalent via
-`pacman-key --populate instantos`.
+or install the `instantos-keyring` package (`pacman-key --populate instantos`).
 
 ## building locally
 
@@ -150,7 +123,7 @@ GPG_KEYID="$SIGNING_FPR" \
     ./build.sh
 ```
 
-Single packages can be built without building everything else:
+Single-package builds:
 
 ```bash
 ./build.sh packages/instantmenu    # local package
@@ -158,5 +131,7 @@ Single packages can be built without building everything else:
 ./build.sh --check                 # validate the signing configuration
 ```
 
-`./assemble.sh` builds (and signs) the repository database from whatever
-packages are in `repo/` — the same step the CI assemble job runs.
+`./assemble.sh` builds (and signs) the repository database from the
+packages in `repo/`.
+
+`just check` / `./lint.sh`: shfmt, `ty`, pytest.

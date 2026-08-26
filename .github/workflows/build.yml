@@ -24,10 +24,37 @@ env:
   GPG_KEYID: ${{ vars.GPG_KEYID }}
 
 jobs:
+  # Fast static checks (shell formatting, python types, unit tests) that gate
+  # the build layers: a lint failure costs seconds here instead of build
+  # minutes down the line.
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install tools
+        env:
+          SHFMT_VERSION: "3.13.1"
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          curl -sSfL -o "$HOME/.local/bin/shfmt" \
+            "https://github.com/mvdan/sh/releases/download/v${SHFMT_VERSION}/shfmt_v${SHFMT_VERSION}_linux_amd64"
+          chmod +x "$HOME/.local/bin/shfmt"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Run checks
+        run: ./lint.sh
+
   # Parse all PKGBUILDs, compute the dependency layers and hand each layer to
   # the matching build-N job below as a matrix. Layers are computed per run,
   # they do not need to be maintained by hand.
   layers:
+    needs: lint
     runs-on: ubuntu-latest
     timeout-minutes: 15
     outputs:

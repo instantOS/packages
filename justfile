@@ -15,6 +15,10 @@ check-fmt:
     find packages/ -type f -name "PKGBUILD" -not -path "*/.*" -exec shfmt -d -s -i 4 {} +
     find . -type f -name "*.install" -not -path "*/.*" -exec shfmt -d -s -i 4 {} +
 
+# Run all static checks (formatting, types, unit tests)
+check:
+    ./lint.sh
+
 fetch-pkgbuilds:
     cp ~/workspace/instantWM/packaging/arch/PKGBUILD ./packages/instantwm/
     cp ~/workspace/instantMENU/packaging/arch/PKGBUILD ./packages/instantmenu/
