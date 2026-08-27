@@ -1,7 +1,0 @@
-# mirror list for the instantOS package repository
-
-# Primary instantOS mirror (atomic, validated snapshots)
-Server = https://packages.instantos.io
-
-# Canonical CI deployment
-Server = https://instantos.io/packages
