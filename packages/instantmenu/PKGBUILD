@@ -1,6 +1,6 @@
 # Maintainer: instantOS <hello@instantos.io>
 pkgname=instantmenu
-pkgver=5.0.0
+pkgver=5.0.1
 # The old C version used a date-based pkgver (e.g. 202105271846), which sorts
 # above semver. Epoch 1 lets existing installs upgrade in place.
 epoch=1
@@ -24,8 +24,8 @@ source=(
     "$pkgname-x86_64-unknown-linux-gnu-v$pkgver.tgz::https://github.com/instantOS/instantMENU/releases/download/v$pkgver/instantmenu-x86_64-unknown-linux-gnu-v$pkgver.tgz"
 )
 sha256sums=(
-    '48b7a0c0516d9b0f3a04057df1cf3e23507e894d3eba267d0d140323ee78feed'
-    'fc276312cfa14b93cd232589808b951f5e1ccc9dc672384cc223d2501b9bcf67'
+    'f628fded84859e21058bf0ca521ea13b450d7b75d88969186d8a457073f157bd'
+    '1cb93ffd47293ce00c4019f4d0b2e63cc123c357f1aec9b4ed5b74ee3134dc8b'
 )
 
 package() {
