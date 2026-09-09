@@ -4,6 +4,6 @@ find-cursor
 imgur.sh
 libpamac-aur
 pamac-aur
-skippy-xd-git
+#skippy-xd-git # broken upstream, needs chipmunk, see CI failure 2026-09-09
 yay
 topgrade-bin

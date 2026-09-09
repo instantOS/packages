@@ -45,9 +45,13 @@ if [ -f aurpackages ]; then
     mkdir -p aur_sources
 
     while IFS= read -r line || [[ -n $line ]]; do
-        if [[ -z $line ]] || [[ $line == \#* ]]; then continue; fi
+        # Strip comments (full-line or inline `pkg # reason`) and trim whitespace
+        line="${line%%#*}"
+        line="${line#"${line%%[![:space:]]*}"}"
+        line="${line%"${line##*[![:space:]]}"}"
+        if [[ -z $line ]]; then continue; fi
 
-        pkgname=$(echo "$line" | cut -d':' -f1)
+        pkgname="$line"
 
         # Check if already cloned
         if [ ! -d "aur_sources/$pkgname" ]; then
