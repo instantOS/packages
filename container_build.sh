@@ -56,7 +56,7 @@ sudo -u builder CARGO_BUILD_JOBS=1 makepkg -s --noconfirm
 # systems. The epoch stays in the package metadata for upgrade ordering; only
 # the on-disk filename is sanitized.
 shopt -s nullglob
-built_pkgs=( *.pkg.tar.zst )
+built_pkgs=(*.pkg.tar.zst)
 if [ "${#built_pkgs[@]}" -eq 0 ]; then
     echo "ERROR: makepkg produced no packages in /pkg" >&2
     exit 1
