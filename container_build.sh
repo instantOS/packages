@@ -51,7 +51,24 @@ sudo -u builder CARGO_BUILD_JOBS=1 makepkg -s --noconfirm
 
 # Move built packages to the repo mount
 # We assume the repo is mounted at /repo
-mv *.pkg.tar.zst /repo/
+# Epoch versions (e.g. `1:2.0-1`) put a colon in the makepkg filename, which
+# actions/upload-artifact rejects and which breaks downloads on some file
+# systems. The epoch stays in the package metadata for upgrade ordering; only
+# the on-disk filename is sanitized.
+shopt -s nullglob
+built_pkgs=( *.pkg.tar.zst )
+if [ "${#built_pkgs[@]}" -eq 0 ]; then
+    echo "ERROR: makepkg produced no packages in /pkg" >&2
+    exit 1
+fi
+for pkg in "${built_pkgs[@]}"; do
+    safe=${pkg//:/_}
+    if [ "$pkg" != "$safe" ]; then
+        echo "Sanitizing artifact filename: $pkg -> $safe"
+        mv -- "$pkg" "$safe"
+    fi
+done
+mv -- *.pkg.tar.zst /repo/
 
 # Update the repository database so subsequent builds can find this package
 cd /repo

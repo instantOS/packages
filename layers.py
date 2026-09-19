@@ -237,8 +237,9 @@ def collect_nodes(root: Path | None = None) -> dict[str, PkgMeta]:
         tmp = Path(tempfile.mkdtemp(prefix="aur-meta-"))
         try:
             for line in aur_file.read_text().splitlines():
-                name = line.strip().split(":")[0]
-                if not name or name.startswith("#"):
+                # Strip full-line and inline comments, matching build.sh.
+                name = line.split("#", 1)[0].strip().split(":")[0].strip()
+                if not name:
                     continue
                 target = tmp / name
                 if not target.is_dir():

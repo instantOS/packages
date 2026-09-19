@@ -1,4 +1,6 @@
 alttab
+# AUR-only runtime dependency of instantthemes (not in official Arch repos).
+dasel
 libpamac-aur
 pamac-aur
 #skippy-xd-git # broken upstream, needs chipmunk, see CI failure 2026-09-09

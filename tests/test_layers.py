@@ -268,6 +268,28 @@ def test_collect_nodes_parses_aur_srcinfo_without_executing_pkgbuild(
     assert not marker.exists()
 
 
+def test_collect_nodes_strips_aur_inline_comments(monkeypatch, tmp_path):
+    (tmp_path / "packages").mkdir()
+    (tmp_path / "aurpackages").write_text(
+        "# full-line comment\nhostile # inline comment\n"
+    )
+
+    def fake_run(args, **kwargs):
+        assert args[:2] == ["git", "clone"]
+        assert args[-2].endswith("/hostile.git")
+        target = layers.Path(args[-1])
+        target.mkdir()
+        (target / ".SRCINFO").write_text(
+            "pkgbase = hostile\npkgname = hostile\n"
+        )
+
+    monkeypatch.setattr(layers.subprocess, "run", fake_run)
+
+    assert layers.collect_nodes(root=tmp_path) == {
+        "aur/hostile": PkgMeta("hostile")
+    }
+
+
 def test_extract_aur_meta_fails_closed_without_srcinfo(tmp_path):
     pkgdir = tmp_path / "aur-package"
     pkgdir.mkdir()
