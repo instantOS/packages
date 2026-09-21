@@ -5,6 +5,10 @@ pkgdesc="meta package for instantOS dependencies"
 url="https://github.com/instantOS/packages"
 arch=('any')
 license=('GPL2')
+# Bluetooth management (blueman) is installed by the installer only on
+# machines that actually have a bluetooth adapter; keep it optional here so
+# machines without hardware don't pull the whole bluetooth stack.
+optdepends=('blueman: bluetooth device manager')
 depends=(
     'alacarte'
     'arandr'
@@ -13,7 +17,6 @@ depends=(
     'autorandr'
     'binutils'
     'bison'
-    'blueman'
     'bottom'
     'i3status-rust'
     'commandfinder'
