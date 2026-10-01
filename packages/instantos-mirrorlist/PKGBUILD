@@ -1,6 +1,10 @@
 # Maintainer: instantOS <hello@instantos.io>
 pkgname=instantos-mirrorlist
-pkgver=20260827
+# Date-based pkgver: the mirror list has no upstream version of its own, so
+# this is the version. Bump it whenever the pinned instantCLI tag below (and
+# therefore the mirror list) changes, so mirror changes reach users as a
+# normal package upgrade.
+pkgver=20261001
 pkgrel=1
 pkgdesc="Mirror list for the instantOS package repository"
 arch=('any')
@@ -8,8 +12,14 @@ url="https://github.com/instantOS/packages"
 license=('GPL')
 backup=('etc/pacman.d/instantmirrorlist')
 
-source=("instantmirrorlist::https://raw.githubusercontent.com/instantOS/instantCLI/main/src/common/instantmirrorlist")
-sha256sums=('SKIP')
+# Pinned to an instantCLI release tag, not a branch. The mirror list is a
+# build input, and fetching it from a moving ref means any refactor upstream
+# can break this build: the file moved from src/common/ to src/arch/ in
+# instantCLI 79032175 and the unpinned URL 404'd mid-build. A tag plus a real
+# checksum makes the change explicit and reviewed -- when the mirror list
+# changes, bump the tag below and pkgver together.
+source=("instantmirrorlist::https://raw.githubusercontent.com/instantOS/instantCLI/v0.14.23/src/arch/instantmirrorlist")
+sha256sums=('8e64f70b6f863bbcd4bc27bd2e9ec772edeb7227a7d735190d6087c072436861')
 
 package() {
     install -Dm644 "$srcdir/instantmirrorlist" "$pkgdir/etc/pacman.d/instantmirrorlist"
