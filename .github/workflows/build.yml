@@ -280,7 +280,13 @@ jobs:
         with:
           path: ./repo
 
+  # Publish the assembled repository to GitHub Pages. Needs the same
+  # skip-tolerant guard as assemble: a skipped job (e.g. build-4, which is
+  # always skipped because the dependency graph is only 4 levels deep) poisons
+  # every job downstream of it in the needs chain, and the implicit success()
+  # that a job without an `if` inherits would skip this job too.
   deploy:
+    if: ${{ !cancelled() && !failure() }}
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
