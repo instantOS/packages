@@ -1,6 +1,6 @@
 # Maintainer: instantOS <hello@instantos.io>
 pkgname=instantwm
-pkgver=0.4.0
+pkgver=0.5.0
 pkgrel=1
 pkgdesc="A tiling window manager for X11 and Wayland"
 arch=('x86_64')
@@ -47,8 +47,8 @@ source=(
     "$pkgname-x86_64-unknown-linux-gnu-v$pkgver.tgz::https://github.com/instantOS/instantWM/releases/download/v$pkgver/instantwm-x86_64-unknown-linux-gnu-v$pkgver.tgz"
 )
 sha256sums=(
-    '1e882bcb1ad794c791a44dcfab4f39848b3a2deed2b579ea19d348f7b11e69f2'
-    '85caa4068037a26c1d2a0a6f2fb0f441b0fc275c137ff29c18a9ede65667e83b'
+    'da9749573825afeb6d179f8d7e24adeffbe0af472a9af2cb51b63c52e2e68528'
+    'd66937982f431b741b9430fe82b2c9f2bb6fe5d1fab846c03debd33200b5a97d'
 )
 
 package() {
