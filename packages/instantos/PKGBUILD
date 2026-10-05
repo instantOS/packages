@@ -1,6 +1,6 @@
 # Maintainer: paperbenni <paperbenni@gmail.com>
 pkgname=instantos
-pkgrel=1
+pkgrel=2
 pkgdesc="meta package for instantOS"
 url="https://github.com/instantOS/packages"
 arch=('any')
@@ -23,7 +23,6 @@ package() {
         'instantutils'
         'instantwallpaper'
         'instantassist'
-        'instantpass'
         'instantthemes'
         'instantwidgets'
         'instantcursors'

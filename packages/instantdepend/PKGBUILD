@@ -1,6 +1,6 @@
 # Maintainer: paperbenni <paperbenni@gmail.com>
 pkgname=instantdepend
-pkgrel=1
+pkgrel=2
 pkgdesc="meta package for instantOS dependencies"
 url="https://github.com/instantOS/packages"
 arch=('any')
@@ -53,7 +53,10 @@ depends=(
     'nautilus'
     'neovim'
     'network-manager-applet'
+    'noto-fonts'
+    'noto-fonts-cjk'
     'noto-fonts-emoji'
+    'ttf-liberation'
     'otf-firamono-nerd'
     'otf-ipafont'
     'p7zip'

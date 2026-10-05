@@ -1,7 +1,7 @@
 # Maintainer: instantOS <hello@instantos.io>
 pkgname=instantwm
 pkgver=0.5.0
-pkgrel=1
+pkgrel=2
 pkgdesc="A tiling window manager for X11 and Wayland"
 arch=('x86_64')
 url="https://instantos.io"
@@ -33,6 +33,8 @@ depends=(
     'libdrm'
     'mesa'
     'wayland'
+    'fuzzel'
+    'swaybg'
     'libinput'
     'seatd'
     'libglvnd'

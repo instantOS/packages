@@ -1,7 +1,7 @@
 # Maintainer: paperbenni <paperbenni@gmail.com>
 pkgname=ins
 pkgver=0.14.23
-pkgrel=1
+pkgrel=2
 pkgdesc="A powerful command-line tool for managing dotfiles, system diagnostics, and instantOS configurations"
 arch=('x86_64')
 url="https://instantos.io"
@@ -11,6 +11,11 @@ conflicts=('instantpacman' 'instantsettings' 'instantupdate' 'instantwelcome')
 replaces=('instantpacman' 'instantsettings' 'instantupdate' 'instantwelcome')
 depends=('glibc' 'gcc-libs' 'fzf' 'git' 'sqlite')
 optdepends=(
+    'pass: for password-store management with ins pass'
+    'gnupg: for password-store encryption with ins pass'
+    'pass-otp: for OTP entries with ins pass'
+    'wl-clipboard: for copying passwords on Wayland'
+    'xclip: for copying passwords on X11'
     'restic: for backup functionality'
     'kitty: default terminal for scratchpad'
     'ntfsprogs: for NTFS partition resize detection (dual-boot)'
