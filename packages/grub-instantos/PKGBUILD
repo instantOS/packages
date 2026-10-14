@@ -2,7 +2,7 @@
 _pkgname=grub-instantos
 pkgname=$_pkgname
 pkgver=202005141602
-pkgrel=1
+pkgrel=2
 pkgdesc="the grub theme for instantOS"
 url="https://github.com/instantOS/grub-instantos"
 arch=('any')
@@ -36,6 +36,6 @@ package() {
     mkdir -p ${pkgdir}/usr/share/grub/themes/instantos
     mkdir -p ${pkgdir}/boot/grub/fonts
     rm README.*
-    mv ./theme/*.pf2 ${pkgdir}/boot/grub/fonts/
+    cp ./theme/*.pf2 ${pkgdir}/boot/grub/fonts/
     mv ./theme/* ${pkgdir}/usr/share/grub/themes/instantos
 }
