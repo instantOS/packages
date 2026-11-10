@@ -16,9 +16,7 @@ depends=(
     'glibc'
     'libxcb'
     'libxkbcommon-x11'
-    'perl'
 )
-optdepends=('i3-wm: launch desktop entries with instantmenu_smartrun desktop')
 source=(
     "$pkgname-$pkgver.tar.gz::https://github.com/instantOS/instantMENU/archive/refs/tags/v$pkgver.tar.gz"
     "$pkgname-x86_64-unknown-linux-gnu-v$pkgver.tgz::https://github.com/instantOS/instantMENU/releases/download/v$pkgver/instantmenu-x86_64-unknown-linux-gnu-v$pkgver.tgz"
@@ -40,7 +38,6 @@ package() {
     # Helper scripts
     install -Dm755 "$archive/instantmenu_path" "$pkgdir/usr/bin/instantmenu_path"
     install -Dm755 "$archive/instantmenu_run" "$pkgdir/usr/bin/instantmenu_run"
-    install -Dm755 "$archive/instantmenu_smartrun" "$pkgdir/usr/bin/instantmenu_smartrun"
 
     # Man page, license, docs
     install -Dm644 "$archive/instantmenu.1" "$pkgdir/usr/share/man/man1/instantmenu.1"
