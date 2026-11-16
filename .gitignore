@@ -80,3 +80,4 @@ packages/paperbash/paperbash-*.zst
 /repo/instant.files
 /repo/instant.files.tar.gz
 /repo/instant.files.tar.gz.old
+/packages/instantos
